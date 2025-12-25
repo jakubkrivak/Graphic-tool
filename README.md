@@ -22,7 +22,7 @@ Moderní webová aplikace pro generování příspěvků na sociální sítě z 
 npm install
 ```
 
-2. Vytvořte soubor `.env` a přidejte svůj OpenAI API klíč:
+2. Pro lokální vývoj vytvořte soubor `.env` a přidejte svůj OpenAI API klíč:
 ```bash
 cp .env.example .env
 ```
@@ -32,7 +32,11 @@ Poté upravte `.env` a přidejte svůj API klíč:
 OPENAI_API_KEY=sk-your-actual-api-key-here
 ```
 
+**Pro Vercel:** Nastavte `OPENAI_API_KEY` v Environment Variables na Vercelu (viz [VERCEL_SETUP.md](./VERCEL_SETUP.md))
+
 ## 🎯 Spuštění
+
+### Lokální vývoj:
 
 Otevřete dva terminály:
 
@@ -47,6 +51,20 @@ npm run dev
 ```
 
 Aplikace bude dostupná na `http://localhost:3000`
+
+### Nasazení na Vercel:
+
+1. **Nastavte Environment Variables na Vercelu:**
+   - Přejděte do projektu na Vercelu
+   - Settings → Environment Variables
+   - Přidejte: `OPENAI_API_KEY` s vaším API klíčem
+
+2. **Pushněte změny:**
+```bash
+git push
+```
+
+Vercel automaticky nasadí aplikaci. API endpoint bude dostupný na `/api/generate-posts`
 
 ## 📝 Použití
 
