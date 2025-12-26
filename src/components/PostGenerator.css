@@ -1,14 +1,16 @@
 .post-generator {
-  background: white;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   border-radius: 16px;
   padding: 30px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px rgba(37, 99, 235, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .post-generator h2 {
   margin-bottom: 25px;
-  color: #333;
+  color: white;
   font-size: 1.8rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .posts-container {
@@ -18,16 +20,18 @@
 }
 
 .post-card {
-  border: 2px solid #e0e0e0;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
   padding: 20px;
   transition: all 0.3s ease;
-  background: #fafafa;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .post-card:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .post-header {
@@ -38,28 +42,33 @@
 }
 
 .post-header h3 {
-  color: #667eea;
+  color: white;
   font-size: 1.3rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .copy-btn {
   padding: 8px 16px;
-  background: #667eea;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
   color: white;
-  border: none;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
   transition: all 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .copy-btn:hover {
-  background: #764ba2;
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .post-content {
@@ -67,10 +76,11 @@
 }
 
 .post-content p {
-  color: #333;
+  color: white;
   font-size: 1.1rem;
   line-height: 1.6;
   white-space: pre-wrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .post-hashtags {
@@ -78,16 +88,19 @@
   flex-wrap: wrap;
   gap: 8px;
   padding-top: 15px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .hashtag {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
   color: white;
   padding: 5px 12px;
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 @media (max-width: 768px) {
