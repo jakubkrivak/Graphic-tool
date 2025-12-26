@@ -1,8 +1,8 @@
 .photo-upload {
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   border-radius: 16px;
   padding: 30px;
-  box-shadow: 0 10px 40px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 10px 40px rgba(5, 150, 105, 0.3);
   border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
