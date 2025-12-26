@@ -26,14 +26,15 @@ function App() {
       })
 
       if (!response.ok) {
-        throw new Error('Chyba při generování příspěvků')
+        const errorData = await response.json().catch(() => ({ error: 'Neznámá chyba' }))
+        throw new Error(errorData.error || errorData.message || 'Chyba při generování příspěvků')
       }
 
       const data = await response.json()
       setGeneratedPosts(data.posts)
     } catch (error) {
       console.error('Chyba:', error)
-      alert('Nepodařilo se vygenerovat příspěvky. Zkontrolujte, zda je server spuštěn a máte nastavený OPENAI_API_KEY.')
+      alert(`Chyba: ${error.message}\n\nZkontrolujte konzoli pro více informací.`)
     } finally {
       setLoading(false)
     }

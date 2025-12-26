@@ -9,12 +9,30 @@ export const config = {
 }
 
 export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Metoda není povolena' })
   }
 
   try {
+    // Check API key first
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY není nastaven')
+      return res.status(500).json({ 
+        error: 'OPENAI_API_KEY není nastaven. Nastavte ho v Environment Variables na Vercelu.' 
+      })
+    }
+
     // Parse multipart form data using busboy
     const formData = await parseMultipartFormData(req)
     
@@ -26,12 +44,6 @@ export default async function handler(req, res) {
       apiKey: process.env.OPENAI_API_KEY
     })
 
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ 
-        error: 'OPENAI_API_KEY není nastaven. Nastavte ho v Environment Variables na Vercelu.' 
-      })
-    }
-
     const posts = []
 
     // Process each photo
@@ -40,9 +52,11 @@ export default async function handler(req, res) {
       const mimeType = file.mimetype
 
       // Analyze image and generate posts
-      // Using gpt-4o which supports vision, fallback to gpt-4-turbo if needed
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o', // Supports vision API
+      // Try gpt-4o first, fallback to gpt-4-turbo if needed
+      let response
+      try {
+        response = await openai.chat.completions.create({
+          model: 'gpt-4o', // Supports vision API
         messages: [
           {
             role: 'user',
@@ -83,6 +97,52 @@ Použij češtinu pro všechny příspěvky.`
         ],
         max_tokens: 1000
       })
+      } catch (modelError) {
+        // Fallback to gpt-4-turbo if gpt-4o is not available
+        console.warn('gpt-4o není dostupný, používám gpt-4-turbo', modelError.message)
+        response = await openai.chat.completions.create({
+          model: 'gpt-4-turbo',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Analyzuj tento obrázek a vytvoř tři různé příspěvky pro sociální sítě:
+1. Instagram - kreativní popisek s emoji, 2-3 relevantní hashtagy
+2. Facebook - delší popis, přátelský tón, 1-2 hashtagy
+3. Twitter/X - stručný, vtipný nebo zajímavý tweet, max 280 znaků, 1-2 hashtagy
+
+Odpověz ve formátu JSON:
+{
+  "instagram": {
+    "content": "...",
+    "hashtags": ["#tag1", "#tag2"]
+  },
+  "facebook": {
+    "content": "...",
+    "hashtags": ["#tag1"]
+  },
+  "twitter": {
+    "content": "...",
+    "hashtags": ["#tag1"]
+  }
+}
+
+Použij češtinu pro všechny příspěvky.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:${mimeType};base64,${base64Image}`
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 1000
+        })
+      }
 
       const content = response.choices[0].message.content
       
@@ -126,9 +186,11 @@ Použij češtinu pro všechny příspěvky.`
     return res.status(200).json({ posts })
   } catch (error) {
     console.error('Chyba při generování příspěvků:', error)
+    console.error('Error stack:', error.stack)
     return res.status(500).json({ 
       error: 'Chyba při generování příspěvků',
-      message: error.message 
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     })
   }
 }
@@ -138,53 +200,79 @@ async function parseMultipartFormData(req) {
   return new Promise((resolve, reject) => {
     const files = []
     const filePromises = []
+    let hasError = false
     
-    const bb = busboy({ 
-      headers: req.headers,
-      limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB limit
-      }
-    })
-    
-    bb.on('file', (name, file, info) => {
-      const { filename, mimeType } = info
-      const chunks = []
-      
-      const filePromise = new Promise((fileResolve, fileReject) => {
-        file.on('data', (chunk) => {
-          chunks.push(chunk)
-        })
-        
-        file.on('end', () => {
-          files.push({
-            fieldname: name,
-            originalname: filename,
-            mimetype: mimeType,
-            buffer: Buffer.concat(chunks)
-          })
-          fileResolve()
-        })
-        
-        file.on('error', fileReject)
+    try {
+      const bb = busboy({ 
+        headers: req.headers,
+        limits: {
+          fileSize: 10 * 1024 * 1024 // 10MB limit
+        }
       })
       
-      filePromises.push(filePromise)
-    })
-    
-    bb.on('finish', async () => {
-      try {
-        await Promise.all(filePromises)
-        resolve({ files })
-      } catch (error) {
-        reject(error)
+      bb.on('file', (name, file, info) => {
+        const { filename, mimeType } = info
+        const chunks = []
+        
+        const filePromise = new Promise((fileResolve, fileReject) => {
+          file.on('data', (chunk) => {
+            chunks.push(chunk)
+          })
+          
+          file.on('end', () => {
+            if (!hasError) {
+              files.push({
+                fieldname: name,
+                originalname: filename,
+                mimetype: mimeType,
+                buffer: Buffer.concat(chunks)
+              })
+            }
+            fileResolve()
+          })
+          
+          file.on('error', (err) => {
+            hasError = true
+            fileReject(err)
+          })
+        })
+        
+        filePromises.push(filePromise)
+      })
+      
+      bb.on('finish', async () => {
+        try {
+          await Promise.all(filePromises)
+          if (!hasError) {
+            resolve({ files })
+          }
+        } catch (error) {
+          reject(error)
+        }
+      })
+      
+      bb.on('error', (err) => {
+        hasError = true
+        reject(err)
+      })
+      
+      // Pipe the request to busboy
+      if (req.pipe) {
+        req.pipe(bb)
+      } else {
+        // If req is not a stream, read it as buffer
+        const chunks = []
+        req.on('data', chunk => chunks.push(chunk))
+        req.on('end', () => {
+          const buffer = Buffer.concat(chunks)
+          const { Readable } = require('stream')
+          const stream = Readable.from(buffer)
+          stream.pipe(bb)
+        })
+        req.on('error', reject)
       }
-    })
-    
-    bb.on('error', (err) => {
+    } catch (err) {
       reject(err)
-    })
-    
-    // Pipe the request to busboy
-    req.pipe(bb)
+    }
   })
 }
